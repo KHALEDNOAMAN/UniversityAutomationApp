@@ -1,0 +1,2 @@
+S001,John Doe,Computer Science,2,john_doe
+S002,Jane Smith,Mathematics,3,jane_s

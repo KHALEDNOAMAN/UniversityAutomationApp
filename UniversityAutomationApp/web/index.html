@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="University Automation System — Manage courses, grades, and transcripts">
+    <title>University Automation System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-brand">
+                    <div class="brand-icon">🎓</div>
+                    <h1>University<span>Automation</span></h1>
+                    <p class="brand-subtitle">Student Information System</p>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="input-group">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" placeholder="Enter username" autocomplete="off" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter password" required>
+                    </div>
+                    <div id="login-error" class="error-msg hidden"></div>
+                    <button type="submit" id="login-btn" class="btn btn-primary btn-full">Sign In</button>
+                </form>
+                <div class="demo-accounts">
+                    <p class="demo-title">Demo Accounts</p>
+                    <div class="demo-chips">
+                        <button class="demo-chip" data-user="john_doe" data-pass="pass123">👨‍🎓 Student</button>
+                        <button class="demo-chip" data-user="prof_ali" data-pass="teach789">👨‍🏫 Instructor</button>
+                        <button class="demo-chip" data-user="admin" data-pass="admin123">🔑 Admin</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard-screen" class="screen">
+            <nav class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <div class="brand-icon-sm">🎓</div>
+                    <span class="sidebar-brand">UniAuto</span>
+                </div>
+                <div class="sidebar-user">
+                    <div class="avatar" id="sidebar-avatar">JD</div>
+                    <div class="user-info">
+                        <span class="user-name" id="sidebar-name">John Doe</span>
+                        <span class="user-role" id="sidebar-role">Student</span>
+                    </div>
+                </div>
+                <ul class="nav-menu" id="nav-menu"></ul>
+                <button class="btn btn-logout" id="logout-btn">
+                    <span>↩</span> Sign Out
+                </button>
+            </nav>
+            <main class="main-content">
+                <header class="topbar">
+                    <button class="hamburger" id="hamburger-btn">☰</button>
+                    <h2 id="page-title">Dashboard</h2>
+                    <div class="topbar-right">
+                        <span id="topbar-greeting"></span>
+                    </div>
+                </header>
+                <div class="content-area" id="content-area"></div>
+            </main>
+        </div>
+    </div>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

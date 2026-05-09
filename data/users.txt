@@ -1,0 +1,5 @@
+admin,admin123,admin,Admin User,A001
+john_doe,pass123,student,John Doe,S001
+jane_s,pass456,student,Jane Smith,S002
+prof_ali,teach789,instructor,Prof. Ali Kaya,I001
+prof_cem,teach000,instructor,Prof. Cem Demir,I002
