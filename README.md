@@ -161,5 +161,5 @@ This project is for educational purposes.
 ---
 
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/KHALEDNOAMAN">KHALEDNOAMAN</a>
+  Made by <a href="https://github.com/KHALEDNOAMAN">KHALEDNOAMAN</a>
 </p>
