@@ -32,34 +32,50 @@ public class DataStore {
 
     private void seedDemoData() {
         // Users
-        users.add(new User("admin",    "admin123",   "admin",      "Admin User",       "A001"));
-        users.add(new User("john_doe", "pass123",    "student",    "John Doe",         "S001"));
-        users.add(new User("jane_s",   "pass456",    "student",    "Jane Smith",       "S002"));
-        users.add(new User("prof_ali", "teach789",   "instructor", "Prof. Ali Kaya",   "I001"));
-        users.add(new User("prof_cem", "teach000",   "instructor", "Prof. Cem Demir",  "I002"));
+        users.add(new User("admin",          "admin123",   "admin",      "Admin User",         "A001"));
+        users.add(new User("john_doe",       "pass123",    "student",    "John Doe",           "S001"));
+        users.add(new User("jane_s",         "pass456",    "student",    "Jane Smith",         "S002"));
+        users.add(new User("prof_ali",       "teach789",   "instructor", "Prof. Ali Kaya",     "I001"));
+        users.add(new User("prof_cem",       "teach000",   "instructor", "Prof. Cem Demir",    "I002"));
+        users.add(new User("khaled_student", "khaled123",  "student",    "Khaled Noaman",      "S003"));
+        users.add(new User("khaled_admin",   "khaled456",  "admin",      "Khaled Noaman",      "A002"));
+        users.add(new User("prof_nazife",    "nazife789",  "advisor",    "Prof. Nazife Cevik",  "I003"));
 
-        // Student profiles
-        students.add(new StudentProfile("S001", "John Doe",   "Computer Science",  2, "john_doe"));
-        students.add(new StudentProfile("S002", "Jane Smith",  "Mathematics",       3, "jane_s"));
+        // Student profiles (studentId, fullName, department, year, credit, username)
+        students.add(new StudentProfile("S001", "John Doe",      "Computer Science",      2, 45, "john_doe"));
+        students.add(new StudentProfile("S002", "Jane Smith",    "Mathematics",           3, 72, "jane_s"));
+        students.add(new StudentProfile("S003", "Khaled Noaman", "Computer Engineering",  3, 80, "khaled_student"));
 
         // Courses
-        courses.add(new Course("CS101", "Introduction to Programming",  3, 30, "prof_ali"));
-        courses.add(new Course("CS201", "Data Structures",              3, 25, "prof_ali"));
-        courses.add(new Course("MATH101","Calculus I",                  4, 40, "prof_cem"));
-        courses.add(new Course("CS301", "Algorithms",                   3, 20, "prof_ali"));
-        courses.add(new Course("MATH201","Linear Algebra",              3, 35, "prof_cem"));
+        courses.add(new Course("CS101",   "Introduction to Programming",   3, 30, "prof_ali"));
+        courses.add(new Course("CS201",   "Data Structures",               3, 25, "prof_ali"));
+        courses.add(new Course("MATH101", "Calculus I",                    4, 40, "prof_cem"));
+        courses.add(new Course("CS301",   "Algorithms",                    3, 20, "prof_ali"));
+        courses.add(new Course("MATH201", "Linear Algebra",                3, 35, "prof_cem"));
+        courses.add(new Course("VBP101",  "Visual Basic Programming",      3, 35, "prof_nazife"));
+        courses.add(new Course("CS401",   "Formal Languages and Automata", 3, 25, "prof_nazife"));
 
         // Enrollments
-        enrollments.add(new Enrollment("john_doe", "CS101"));
-        enrollments.add(new Enrollment("john_doe", "CS201"));
-        enrollments.add(new Enrollment("john_doe", "MATH101"));
-        enrollments.add(new Enrollment("jane_s",   "MATH101"));
-        enrollments.add(new Enrollment("jane_s",   "MATH201"));
+        enrollments.add(new Enrollment("john_doe",       "CS101"));
+        enrollments.add(new Enrollment("john_doe",       "CS201"));
+        enrollments.add(new Enrollment("john_doe",       "MATH101"));
+        enrollments.add(new Enrollment("jane_s",         "MATH101"));
+        enrollments.add(new Enrollment("jane_s",         "MATH201"));
+        enrollments.add(new Enrollment("khaled_student", "CS101"));
+        enrollments.add(new Enrollment("khaled_student", "CS401"));
+        enrollments.add(new Enrollment("khaled_student", "VBP101"));
+        enrollments.add(new Enrollment("khaled_student", "MATH101"));
+        enrollments.add(new Enrollment("khaled_student", "CS301"));
 
         // Grades
-        grades.add(new GradeRecord("john_doe", "CS101",  78.0, 85.0));
-        grades.add(new GradeRecord("john_doe", "MATH101", 65.0, 72.0));
-        grades.add(new GradeRecord("jane_s",   "MATH101", 90.0, 95.0));
+        grades.add(new GradeRecord("john_doe",       "CS101",   78.0,  85.0));
+        grades.add(new GradeRecord("john_doe",       "MATH101", 65.0,  72.0));
+        grades.add(new GradeRecord("jane_s",         "MATH101", 90.0,  95.0));
+        grades.add(new GradeRecord("khaled_student", "CS101",   100.0, 100.0));
+        grades.add(new GradeRecord("khaled_student", "VBP101",  100.0, 100.0));
+        grades.add(new GradeRecord("khaled_student", "CS401",   100.0, 100.0));
+        grades.add(new GradeRecord("khaled_student", "MATH101", 100.0, 100.0));
+        grades.add(new GradeRecord("khaled_student", "CS301",   100.0, 100.0));
 
         saveAll();
         System.out.println("[DataStore] Demo data seeded.");
@@ -253,9 +269,15 @@ public class DataStore {
     public void loadStudents() {
         students.clear();
         for (String line : readLines(STUDENTS_FILE)) {
-            String[] p = line.split(",", 5);
-            if (p.length == 5)
-                students.add(new StudentProfile(p[0], p[1], p[2], Integer.parseInt(p[3]), p[4]));
+            String[] p = line.split(",", 6);
+            if (p.length == 6)
+                // format: studentId, fullName, department, year, credit, username
+                students.add(new StudentProfile(p[0], p[1], p[2],
+                        Integer.parseInt(p[3]), Integer.parseInt(p[4]), p[5]));
+            else if (p.length == 5)
+                // backward compatibility: no credit field
+                students.add(new StudentProfile(p[0], p[1], p[2],
+                        Integer.parseInt(p[3]), p[4]));
         }
     }
     public void loadCourses() {

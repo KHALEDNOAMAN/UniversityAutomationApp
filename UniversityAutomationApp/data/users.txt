@@ -3,3 +3,6 @@ john_doe,pass123,student,John Doe,S001
 jane_s,pass456,student,Jane Smith,S002
 prof_ali,teach789,instructor,Prof. Ali Kaya,I001
 prof_cem,teach000,instructor,Prof. Cem Demir,I002
+khaled_student,khaled123,student,Khaled Noaman,S003
+khaled_admin,khaled456,admin,Khaled Noaman,A002
+prof_nazife,nazife789,advisor,Prof. Nazife Cevik,I003

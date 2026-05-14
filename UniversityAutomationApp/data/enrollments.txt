@@ -3,3 +3,8 @@ john_doe,CS201
 john_doe,MATH101
 jane_s,MATH101
 jane_s,MATH201
+khaled_student,CS101
+khaled_student,CS401
+khaled_student,VBP101
+khaled_student,MATH101
+khaled_student,CS301

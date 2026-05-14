@@ -3,3 +3,5 @@ CS201,Data Structures,3,25,prof_ali
 MATH101,Calculus I,4,40,prof_cem
 CS301,Algorithms,3,20,prof_ali
 MATH201,Linear Algebra,3,35,prof_cem
+VBP101,Visual Basic Programming,3,35,prof_nazife
+CS401,Formal Languages and Automata,3,25,prof_nazife

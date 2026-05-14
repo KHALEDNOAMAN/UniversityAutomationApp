@@ -1,3 +1,8 @@
 john_doe,CS101,78.0,85.0
 john_doe,MATH101,65.0,72.0
 jane_s,MATH101,90.0,95.0
+khaled_student,VBP101,100.0,100.0
+khaled_student,CS401,100.0,100.0
+khaled_student,CS101,100.0,100.0
+khaled_student,MATH101,100.0,100.0
+khaled_student,CS301,100.0,100.0

@@ -1,2 +1,3 @@
-S001,John Doe,Computer Science,2,john_doe
-S002,Jane Smith,Mathematics,3,jane_s
+S001,John Doe,Computer Science,2,45,john_doe
+S002,Jane Smith,Mathematics,3,72,jane_s
+S003,Khaled Noaman,Computer Engineering,3,80,khaled_student

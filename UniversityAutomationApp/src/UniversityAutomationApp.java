@@ -1,410 +1,589 @@
-import java.util.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 
-/**
- * UniversityAutomationApp — Console-based entry point.
- * Student-level features: login, view profile, browse courses,
- * enroll/drop, view grades, and view transcript.
- */
-public class UniversityAutomationApp {
+public class UniversityAutomationApp extends JFrame {
 
-    private static final DataStore store = new DataStore();
-    private static final Scanner   sc    = new Scanner(System.in);
-    private static User currentUser = null;
+    // ─────────────── UML Defined Fields ───────────────
+    private User currentUser;
+    private JComboBox<String> studentUserCombo;
+    private JComboBox<String> instructorCombo;
+    
+    // Additional fields for UI management
+    private DataStore dataStore;
+    private JPanel mainContainer;
+    private CardLayout cardLayout;
 
-    // ─────────────────────────────────────────────────────────
-    //  main
-    // ─────────────────────────────────────────────────────────
+    // ─────────────── Main & Initialization ───────────────
     public static void main(String[] args) {
-        store.initialize();
+        SwingUtilities.invokeLater(() -> {
+            new UniversityAutomationApp().setVisible(true);
+        });
+    }
+
+    public UniversityAutomationApp() {
+        dataStore = new DataStore();
+        dataStore.initialize();
+
+        setTitle("University Automation System");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        cardLayout = new CardLayout();
+        mainContainer = new JPanel(cardLayout);
+        add(mainContainer, BorderLayout.CENTER);
+
         showLoginPanel();
     }
 
-    // ─────────────────────────────────────────────────────────
-    //  LOGIN
-    // ─────────────────────────────────────────────────────────
-    private static void showLoginPanel() {
-        while (true) {
-            printHeader("UNIVERSITY AUTOMATION SYSTEM — LOGIN");
-            System.out.print("  Username : ");
-            String username = sc.nextLine().trim();
-            System.out.print("  Password : ");
-            String password = sc.nextLine().trim();
+    // ─────────────── UML Method: showLoginPanel ───────────────
+    public void showLoginPanel() {
+        // Remove old panels to prevent accumulation on logout/login cycles
+        mainContainer.removeAll();
 
-            currentUser = store.authenticate(username, password);
-            if (currentUser == null) {
-                System.out.println("\n  [!] Invalid credentials. Please try again.\n");
-            } else {
-                System.out.println("\n  Welcome, " + currentUser.getFullName()
-                        + " (" + currentUser.getRole() + ")!\n");
-                showDashboard();
-                return;
+        JPanel loginPanel = new JPanel(new BorderLayout());
+
+        JPanel centerPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(200, 200, 200, 200));
+
+        JTextField usernameField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+        JButton loginButton = new JButton("Login");
+
+        centerPanel.add(new JLabel("Username:"));
+        centerPanel.add(usernameField);
+        centerPanel.add(new JLabel("Password:"));
+        centerPanel.add(passwordField);
+        centerPanel.add(new JLabel(""));
+        centerPanel.add(loginButton);
+
+        loginPanel.add(new JLabel("Student Information System - Login", JLabel.CENTER), BorderLayout.NORTH);
+        loginPanel.add(centerPanel, BorderLayout.CENTER);
+
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = usernameField.getText().trim();
+                String password = new String(passwordField.getPassword());
+
+                currentUser = dataStore.authenticate(username, password);
+                if (currentUser != null) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this,
+                            "Welcome " + currentUser.getFullName() + "!");
+                    showDashboard();
+                } else {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this,
+                            "Invalid credentials!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
-        }
+        });
+
+        mainContainer.add(loginPanel, "LOGIN");
+        cardLayout.show(mainContainer, "LOGIN");
     }
 
-    // ─────────────────────────────────────────────────────────
-    //  DASHBOARD — routes by role
-    // ─────────────────────────────────────────────────────────
-    private static void showDashboard() {
-        switch (currentUser.getRole()) {
-            case "student":    showStudentDashboard();    break;
-            case "instructor": showInstructorDashboard(); break;
-            case "admin":      showAdminDashboard();      break;
-            default:
-                System.out.println("Unknown role. Logging out.");
+    // ─────────────── UML Method: showDashboard ───────────────
+    public void showDashboard() {
+        JPanel dashboardPanel = new JPanel(new BorderLayout());
+
+        // Header
+        String roleDisplay = currentUser.getRole().substring(0, 1).toUpperCase()
+                           + currentUser.getRole().substring(1);
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.add(new JLabel(" Logged in as: " + currentUser.getFullName()
+                + " (" + roleDisplay + ")"), BorderLayout.WEST);
+
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentUser = null;
+                showLoginPanel();
+            }
+        });
+        headerPanel.add(logoutButton, BorderLayout.EAST);
+        dashboardPanel.add(headerPanel, BorderLayout.NORTH);
+
+        // Role-based Tabs
+        JTabbedPane tabbedPane = new JTabbedPane();
+        
+        if (currentUser.getRole().equals("admin")) {
+            tabbedPane.addTab("Add User", createUsersPanel());
+            tabbedPane.addTab("Add Student Profile", createStudentsPanel());
+            tabbedPane.addTab("Add Course", createCoursesPanel());
+            tabbedPane.addTab("System Reports", createReportsPanel());
+        } else if (currentUser.getRole().equals("advisor")) {
+            // Advisor = Instructor access + elevated admin-level access
+            tabbedPane.addTab("My Courses", createInstructorCoursesPanel());
+            tabbedPane.addTab("Enter Grades", createGradeEntryPanel());
+            tabbedPane.addTab("All Students", createAdvisorStudentsPanel());
+            tabbedPane.addTab("System Reports", createReportsPanel());
+        } else if (currentUser.getRole().equals("instructor")) {
+            tabbedPane.addTab("My Courses", createInstructorCoursesPanel());
+            tabbedPane.addTab("Enter Grades", createGradeEntryPanel());
+        } else if (currentUser.getRole().equals("student")) {
+            tabbedPane.addTab("Available Courses", createAvailableCoursesPanel());
+            tabbedPane.addTab("My Courses", createMyCoursesPanel());
+            tabbedPane.addTab("Transcript & Grades", createTranscriptPanel());
         }
+
+        dashboardPanel.add(tabbedPane, BorderLayout.CENTER);
+        mainContainer.add(dashboardPanel, "DASHBOARD");
+        cardLayout.show(mainContainer, "DASHBOARD");
     }
 
-    // ─────────────────────────────────────────────────────────
-    //  STUDENT DASHBOARD
-    // ─────────────────────────────────────────────────────────
-    private static void showStudentDashboard() {
-        while (true) {
-            printHeader("STUDENT DASHBOARD  —  " + currentUser.getFullName());
-            System.out.println("  [1] My Profile");
-            System.out.println("  [2] Available Courses");
-            System.out.println("  [3] My Courses  (Enroll / Drop)");
-            System.out.println("  [4] My Grades");
-            System.out.println("  [5] My Transcript  (GPA)");
-            System.out.println("  [0] Logout");
-            System.out.print("\n  Choice: ");
-            String choice = sc.nextLine().trim();
+    // ==========================================
+    // ADMIN PANELS
+    // ==========================================
 
-            switch (choice) {
-                case "1": showStudentProfile();       break;
-                case "2": showAvailableCoursesPanel(); break;
-                case "3": showMyCoursesPanel();        break;
-                case "4": showGradesPanel();           break;
-                case "5": showTranscriptPanel();       break;
-                case "0":
-                    System.out.println("\n  Goodbye!\n");
-                    currentUser = null;
-                    showLoginPanel();
+    // ─────────────── UML Method: createUsersPanel ───────────────
+    public JPanel createUsersPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel form = new JPanel(new GridLayout(6, 2, 5, 5));
+        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JTextField txtUsername = new JTextField();
+        JPasswordField txtPassword = new JPasswordField();
+        JComboBox<String> cboRole = new JComboBox<>(new String[]{"student", "instructor", "advisor", "admin"});
+        JTextField txtFullName = new JTextField();
+        JTextField txtRefId = new JTextField();
+        JButton btnAdd = new JButton("Add User");
+
+        form.add(new JLabel("Username:")); form.add(txtUsername);
+        form.add(new JLabel("Password:")); form.add(txtPassword);
+        form.add(new JLabel("Role:")); form.add(cboRole);
+        form.add(new JLabel("Full Name:")); form.add(txtFullName);
+        form.add(new JLabel("Ref ID:")); form.add(txtRefId);
+        form.add(new JLabel("")); form.add(btnAdd);
+        
+        panel.add(form, BorderLayout.NORTH);
+
+        btnAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (dataStore.findUser(txtUsername.getText()) != null) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "User already exists!");
                     return;
-                default:
-                    System.out.println("  [!] Invalid option.\n");
+                }
+                dataStore.users.add(new User(
+                    txtUsername.getText(),
+                    new String(txtPassword.getPassword()),
+                    (String)cboRole.getSelectedItem(),
+                    txtFullName.getText(),
+                    txtRefId.getText()
+                ));
+                dataStore.saveUsers();
+                JOptionPane.showMessageDialog(UniversityAutomationApp.this, "User added successfully.");
+                
+                // Refresh combos if they are instantiated
+                if(studentUserCombo != null) studentUserCombo.addItem(txtUsername.getText());
+                if(instructorCombo != null && "instructor".equals(cboRole.getSelectedItem())) {
+                    instructorCombo.addItem(txtUsername.getText());
+                }
             }
-        }
+        });
+
+        return panel;
     }
 
-    // ── 1. My Profile ────────────────────────────────────────
-    private static void showStudentProfile() {
-        printHeader("MY PROFILE");
-        StudentProfile sp = store.findStudentProfileByUsername(currentUser.getUsername());
-        if (sp == null) {
-            System.out.println("  No profile found for your account.");
-        } else {
-            System.out.println("  Student ID  : " + sp.getStudentId());
-            System.out.println("  Full Name   : " + sp.getFullName());
-            System.out.println("  Department  : " + sp.getDepartment());
-            System.out.println("  Year        : " + sp.getYear());
-            System.out.println("  Username    : " + sp.getUsername());
+    // ─────────────── UML Method: createStudentsPanel ───────────────
+    public JPanel createStudentsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel form = new JPanel(new GridLayout(6, 2, 5, 5));
+        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JTextField txtId = new JTextField();
+        JTextField txtName = new JTextField();
+        JTextField txtDept = new JTextField();
+        JTextField txtYear = new JTextField();
+        
+        // Use UML designated field
+        studentUserCombo = new JComboBox<>();
+        for(User u : dataStore.users) {
+            if(u.getRole().equals("student")) studentUserCombo.addItem(u.getUsername());
         }
-        pressEnter();
-    }
 
-    // ── 2. Available Courses ─────────────────────────────────
-    private static void showAvailableCoursesPanel() {
-        printHeader("AVAILABLE COURSES");
-        if (store.courses.isEmpty()) {
-            System.out.println("  No courses found.");
-        } else {
-            System.out.printf("  %-10s | %-35s | Credits | Quota | Enrolled | Instructor%n",
-                    "Code", "Name");
-            printLine(95);
-            for (Course c : store.courses) {
-                int enrolled = store.countEnrollmentForCourse(c.getCourseCode());
-                boolean full = enrolled >= c.getQuota();
-                System.out.printf("  %-10s | %-35s |    %-4d |  %-4d |  %-7d | %s%s%n",
-                        c.getCourseCode(), c.getCourseName(), c.getCredit(),
-                        c.getQuota(), enrolled, c.getInstructorUsername(),
-                        full ? "  [FULL]" : "");
+        JButton btnAdd = new JButton("Add Student Profile");
+
+        form.add(new JLabel("Student ID:")); form.add(txtId);
+        form.add(new JLabel("Full Name:")); form.add(txtName);
+        form.add(new JLabel("Department:")); form.add(txtDept);
+        form.add(new JLabel("Year:")); form.add(txtYear);
+        form.add(new JLabel("Username:")); form.add(studentUserCombo);
+        form.add(new JLabel("")); form.add(btnAdd);
+
+        panel.add(form, BorderLayout.NORTH);
+
+        btnAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    int year = Integer.parseInt(txtYear.getText());
+                    dataStore.students.add(new StudentProfile(
+                        txtId.getText(), txtName.getText(),
+                        txtDept.getText(), year, (String)studentUserCombo.getSelectedItem()
+                    ));
+                    dataStore.saveStudents();
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Student Profile added.");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Year must be a number!");
+                }
             }
-        }
-
-        System.out.println("\n  Enter a course code to enroll, or press ENTER to go back:");
-        System.out.print("  Code: ");
-        String code = sc.nextLine().trim();
-        if (!code.isEmpty()) {
-            String result = store.enrollStudent(currentUser.getUsername(), code);
-            System.out.println("\n  " + result);
-            pressEnter();
-        }
+        });
+        return panel;
     }
 
-    // ── 3. My Courses ────────────────────────────────────────
-    private static void showMyCoursesPanel() {
-        printHeader("MY ENROLLED COURSES");
-        List<Enrollment> myEnrollments = store.getEnrollmentsByStudent(currentUser.getUsername());
+    // ─────────────── UML Method: createCoursesPanel ───────────────
+    public JPanel createCoursesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel form = new JPanel(new GridLayout(6, 2, 5, 5));
+        form.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        JTextField txtCode = new JTextField();
+        JTextField txtName = new JTextField();
+        JTextField txtCredit = new JTextField();
+        JTextField txtQuota = new JTextField();
+        
+        // Use UML designated field
+        instructorCombo = new JComboBox<>();
+        for(User u : dataStore.users) {
+            if(u.getRole().equals("instructor") || u.getRole().equals("advisor"))
+                instructorCombo.addItem(u.getUsername());
+        }
 
-        if (myEnrollments.isEmpty()) {
-            System.out.println("  You are not enrolled in any courses.");
-        } else {
-            System.out.printf("  %-4s | %-10s | %-35s | Credits%n", "#", "Code", "Name");
-            printLine(70);
-            int i = 1;
-            for (Enrollment e : myEnrollments) {
-                Course c = store.findCourse(e.getCourseCode());
-                String name    = (c != null) ? c.getCourseName() : "Unknown";
-                int    credits = (c != null) ? c.getCredit() : 0;
-                System.out.printf("  %-4d | %-10s | %-35s | %d%n",
-                        i++, e.getCourseCode(), name, credits);
+        JButton btnAdd = new JButton("Add Course");
+
+        form.add(new JLabel("Course Code:")); form.add(txtCode);
+        form.add(new JLabel("Course Name:")); form.add(txtName);
+        form.add(new JLabel("Credits:")); form.add(txtCredit);
+        form.add(new JLabel("Quota:")); form.add(txtQuota);
+        form.add(new JLabel("Instructor:")); form.add(instructorCombo);
+        form.add(new JLabel("")); form.add(btnAdd);
+
+        panel.add(form, BorderLayout.NORTH);
+
+        btnAdd.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    int credit = Integer.parseInt(txtCredit.getText());
+                    int quota = Integer.parseInt(txtQuota.getText());
+                    dataStore.courses.add(new Course(
+                        txtCode.getText(), txtName.getText(),
+                        credit, quota, (String)instructorCombo.getSelectedItem()
+                    ));
+                    dataStore.saveCourses();
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Course added.");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Credit and Quota must be numbers!");
+                }
             }
-        }
-
-        System.out.println("\n  Enter a course code to DROP, or press ENTER to go back:");
-        System.out.print("  Code: ");
-        String code = sc.nextLine().trim();
-        if (!code.isEmpty()) {
-            String result = store.removeEnrollment(currentUser.getUsername(), code);
-            System.out.println("\n  " + result);
-            pressEnter();
-        }
+        });
+        return panel;
     }
 
-    // ── 4. My Grades ─────────────────────────────────────────
-    private static void showGradesPanel() {
-        printHeader("MY GRADES");
-        List<GradeRecord> myGrades = store.getGradesByStudent(currentUser.getUsername());
+    // ─────────────── UML Method: createReportsPanel ───────────────
+    public JPanel createReportsPanel() {
+        JPanel panel = new JPanel(new GridLayout(2, 1));
+        
+        String[] userCols = {"Username", "Role", "Name", "Ref ID"};
+        DefaultTableModel userModel = new DefaultTableModel(userCols, 0);
+        for (User u : dataStore.users) {
+            userModel.addRow(new Object[]{u.getUsername(), u.getRole(), u.getFullName(), u.getReferenceId()});
+        }
+        JTable userTable = new JTable(userModel);
+        panel.add(new JScrollPane(userTable));
 
-        if (myGrades.isEmpty()) {
-            System.out.println("  No grades recorded yet.");
-        } else {
-            System.out.printf("  %-10s | %-35s | Midterm | Final  |   Avg  | Grade%n",
-                    "Code", "Course Name");
-            printLine(85);
-            for (GradeRecord g : myGrades) {
-                Course c = store.findCourse(g.getCourseCode());
-                String name = (c != null) ? c.getCourseName() : "Unknown";
-                System.out.printf("  %-10s | %-35s |  %5.1f  |  %5.1f |  %5.1f | %s%n",
-                        g.getCourseCode(), name,
-                        g.getMidterm(), g.getFinalExam(),
-                        g.calculateAverage(), g.getLetterGrade());
+        String[] courseCols = {"Code", "Name", "Credits", "Quota", "Instructor"};
+        DefaultTableModel courseModel = new DefaultTableModel(courseCols, 0);
+        for (Course c : dataStore.courses) {
+            courseModel.addRow(new Object[]{c.getCourseCode(), c.getCourseName(), c.getCredit(), c.getQuota(), c.getInstructorUsername()});
+        }
+        JTable courseTable = new JTable(courseModel);
+        panel.add(new JScrollPane(courseTable));
+
+        return panel;
+    }
+
+    // ==========================================
+    // ADVISOR PANELS
+    // ==========================================
+
+    // ─────────────── Advisor: All Students with GPA ───────────────
+    public JPanel createAdvisorStudentsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel title = new JLabel("All Students — Advisor View", JLabel.CENTER);
+        title.setFont(new Font("SansSerif", Font.BOLD, 14));
+        panel.add(title, BorderLayout.NORTH);
+
+        String[] cols = {"Student ID", "Full Name", "Department", "Year", "GPA", "Standing"};
+        javax.swing.table.DefaultTableModel model = new javax.swing.table.DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
+
+        for (StudentProfile sp : dataStore.students) {
+            double gpa = dataStore.calculateGPA(sp.getUsername());
+            String standing;
+            if      (gpa >= 3.50) standing = "Dean's List";
+            else if (gpa >= 2.00) standing = "Good Standing";
+            else if (gpa >= 1.00) standing = "Academic Probation";
+            else                  standing = "Academic Suspension";
+            model.addRow(new Object[]{
+                sp.getStudentId(), sp.getFullName(),
+                sp.getDepartment(), sp.getYear(),
+                String.format("%.2f", gpa), standing
+            });
+        }
+
+        JTable table = new JTable(model);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        panel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Detail: show full transcript when a student row is selected
+        JTextArea detailArea = new JTextArea(6, 40);
+        detailArea.setEditable(false);
+        detailArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        detailArea.setBorder(BorderFactory.createTitledBorder("Grade Detail"));
+        panel.add(new JScrollPane(detailArea), BorderLayout.SOUTH);
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
+                int row = table.getSelectedRow();
+                String studentId = model.getValueAt(row, 0).toString();
+                StudentProfile sp = null;
+                for (StudentProfile p : dataStore.students)
+                    if (p.getStudentId().equals(studentId)) { sp = p; break; }
+                if (sp == null) return;
+                StringBuilder sb = new StringBuilder();
+                sb.append("Student: ").append(sp.getFullName())
+                  .append(" | ID: ").append(sp.getStudentId())
+                  .append(" | Dept: ").append(sp.getDepartment()).append("\n");
+                sb.append(String.format("%-12s %-8s %-8s %-8s %s\n",
+                          "Course", "Midterm", "Final", "Avg", "Grade"));
+                sb.append("─────────────────────────────────────────────\n");
+                for (GradeRecord g : dataStore.getGradesByStudent(sp.getUsername())) {
+                    sb.append(String.format("%-12s %-8.1f %-8.1f %-8.1f %s\n",
+                        g.getCourseCode(), g.getMidterm(), g.getFinalExam(),
+                        g.calculateAverage(), g.getLetterGrade()));
+                }
+                detailArea.setText(sb.toString());
             }
-        }
-        pressEnter();
+        });
+
+        return panel;
     }
 
-    // ── 5. Transcript ────────────────────────────────────────
-    private static void showTranscriptPanel() {
-        printHeader("OFFICIAL TRANSCRIPT");
-        StudentProfile sp = store.findStudentProfileByUsername(currentUser.getUsername());
+    // ==========================================
+    // INSTRUCTOR PANELS
+    // ==========================================
 
-        // Header block
-        System.out.println("  ┌─────────────────────────────────────────────────────┐");
-        System.out.printf ("  │  Name       : %-37s│%n",
-                (sp != null) ? sp.getFullName() : currentUser.getFullName());
-        System.out.printf ("  │  Student ID : %-37s│%n",
-                (sp != null) ? sp.getStudentId() : "N/A");
-        System.out.printf ("  │  Department : %-37s│%n",
-                (sp != null) ? sp.getDepartment() : "N/A");
-        System.out.printf ("  │  Year       : %-37s│%n",
-                (sp != null) ? sp.getYear() : "N/A");
-        System.out.println("  └─────────────────────────────────────────────────────┘");
+    // ─────────────── UML Method: createInstructorCoursesPanel ───────────────
+    public JPanel createInstructorCoursesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        String[] courseCols = {"Course Code", "Course Name", "Credits", "Enrolled/Quota"};
+        DefaultTableModel courseModel = new DefaultTableModel(courseCols, 0);
+        List<Course> instructorCourses = dataStore.getCoursesByInstructor(currentUser.getUsername());
+        for (Course c : instructorCourses) {
+            int enrolled = dataStore.countEnrollmentForCourse(c.getCourseCode());
+            courseModel.addRow(new Object[]{c.getCourseCode(), c.getCourseName(), c.getCredit(), enrolled + "/" + c.getQuota()});
+        }
+        JTable courseTable = new JTable(courseModel);
+        panel.add(new JScrollPane(courseTable), BorderLayout.CENTER);
+        return panel;
+    }
 
-        List<GradeRecord> myGrades = store.getGradesByStudent(currentUser.getUsername());
-        double totalCredits = 0;
+    // ─────────────── UML Method: createGradeEntryPanel ───────────────
+    public JPanel createGradeEntryPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        JPanel topGradePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        topGradePanel.add(new JLabel("Select Course:"));
+        JComboBox<String> cboCourses = new JComboBox<>();
+        List<Course> instructorCourses = dataStore.getCoursesByInstructor(currentUser.getUsername());
+        for (Course c : instructorCourses) {
+            cboCourses.addItem(c.getCourseCode());
+        }
+        topGradePanel.add(cboCourses);
+        panel.add(topGradePanel, BorderLayout.NORTH);
 
-        System.out.println();
-        if (myGrades.isEmpty()) {
-            System.out.println("  No completed courses.");
-        } else {
-            System.out.printf("  %-10s | %-30s | Cr | Midterm | Final  |   Avg  | Grade | Points%n",
-                    "Code", "Course");
-            printLine(90);
-            for (GradeRecord g : myGrades) {
-                Course c = store.findCourse(g.getCourseCode());
-                String name   = (c != null) ? c.getCourseName() : "Unknown";
-                int    credit = (c != null) ? c.getCredit() : 3;
-                totalCredits += credit;
-                System.out.printf("  %-10s | %-30s | %2d |  %5.1f  |  %5.1f |  %5.1f | %-5s | %.1f%n",
-                        g.getCourseCode(), name, credit,
-                        g.getMidterm(), g.getFinalExam(),
-                        g.calculateAverage(), g.getLetterGrade(),
-                        g.getGradePoint());
+        String[] studentCols = {"Student Username", "Midterm", "Final Exam"};
+        DefaultTableModel studentModel = new DefaultTableModel(studentCols, 0);
+        JTable studentTable = new JTable(studentModel);
+        panel.add(new JScrollPane(studentTable), BorderLayout.CENTER);
+
+        JPanel gradeEntryPanel = new JPanel(new FlowLayout());
+        JTextField txtMidterm = new JTextField(5);
+        JTextField txtFinal = new JTextField(5);
+        JButton btnSaveGrade = new JButton("Save Grade");
+        gradeEntryPanel.add(new JLabel("Midterm:")); gradeEntryPanel.add(txtMidterm);
+        gradeEntryPanel.add(new JLabel("Final:")); gradeEntryPanel.add(txtFinal);
+        gradeEntryPanel.add(btnSaveGrade);
+        panel.add(gradeEntryPanel, BorderLayout.SOUTH);
+
+        cboCourses.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                studentModel.setRowCount(0);
+                String selectedCourse = (String)cboCourses.getSelectedItem();
+                if (selectedCourse != null) {
+                    List<Enrollment> enrolls = dataStore.getEnrollmentsByCourse(selectedCourse);
+                    for (Enrollment en : enrolls) {
+                        GradeRecord g = dataStore.findGrade(en.getStudentUsername(), selectedCourse);
+                        if (g != null) {
+                            studentModel.addRow(new Object[]{en.getStudentUsername(), g.getMidterm(), g.getFinalExam()});
+                        } else {
+                            studentModel.addRow(new Object[]{en.getStudentUsername(), "", ""});
+                        }
+                    }
+                }
             }
-            printLine(90);
-        }
+        });
 
-        double gpa = store.calculateGPA(currentUser.getUsername());
-        System.out.printf("%n  Total Credits Attempted : %.0f%n", totalCredits);
-        System.out.printf("  Cumulative GPA          : %.2f / 4.00%n", gpa);
-        System.out.println("  GPA Standing            : " + gpaStanding(gpa));
-        pressEnter();
-    }
+        studentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent event) {
+                if (!event.getValueIsAdjusting() && studentTable.getSelectedRow() != -1) {
+                    int row = studentTable.getSelectedRow();
+                    txtMidterm.setText(studentModel.getValueAt(row, 1).toString());
+                    txtFinal.setText(studentModel.getValueAt(row, 2).toString());
+                }
+            }
+        });
 
-    private static String gpaStanding(double gpa) {
-        if (gpa >= 3.5) return "Dean's List";
-        if (gpa >= 2.0) return "Good Standing";
-        if (gpa >= 1.0) return "Academic Probation";
-        return "Academic Suspension";
-    }
-
-    // ─────────────────────────────────────────────────────────
-    //  INSTRUCTOR DASHBOARD (stub)
-    // ─────────────────────────────────────────────────────────
-    private static void showInstructorDashboard() {
-        while (true) {
-            printHeader("INSTRUCTOR DASHBOARD  —  " + currentUser.getFullName());
-            System.out.println("  [1] My Courses");
-            System.out.println("  [2] Course Enrollments");
-            System.out.println("  [3] Enter / Update Grades");
-            System.out.println("  [0] Logout");
-            System.out.print("\n  Choice: ");
-            String choice = sc.nextLine().trim();
-
-            switch (choice) {
-                case "1": showInstructorCourses(); break;
-                case "2": showCourseEnrollments(); break;
-                case "3": showGradeEntryPanel();   break;
-                case "0":
-                    currentUser = null;
-                    showLoginPanel();
+        btnSaveGrade.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int row = studentTable.getSelectedRow();
+                if (row == -1) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Select a student first!");
                     return;
-                default:
-                    System.out.println("  [!] Invalid option.\n");
+                }
+                String studentUser = studentModel.getValueAt(row, 0).toString();
+                String courseCode = (String)cboCourses.getSelectedItem();
+                try {
+                    double midterm = Double.parseDouble(txtMidterm.getText());
+                    double finalEx = Double.parseDouble(txtFinal.getText());
+                    dataStore.upsertGrade(studentUser, courseCode, midterm, finalEx);
+                    studentModel.setValueAt(midterm, row, 1);
+                    studentModel.setValueAt(finalEx, row, 2);
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Grade saved successfully.");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Please enter valid numeric grades.");
+                }
             }
+        });
+
+        if (cboCourses.getItemCount() > 0) {
+            cboCourses.setSelectedIndex(0);
         }
+
+        return panel;
     }
 
-    private static void showInstructorCourses() {
-        printHeader("MY COURSES");
-        List<Course> myCourses = store.getCoursesByInstructor(currentUser.getUsername());
-        if (myCourses.isEmpty()) {
-            System.out.println("  No courses assigned.");
-        } else {
-            for (Course c : myCourses) {
-                int enrolled = store.countEnrollmentForCourse(c.getCourseCode());
-                System.out.printf("  %s | %-35s | Credits: %d | Enrolled: %d/%d%n",
-                        c.getCourseCode(), c.getCourseName(), c.getCredit(),
-                        enrolled, c.getQuota());
-            }
+    // ==========================================
+    // STUDENT PANELS
+    // ==========================================
+
+    // ─────────────── UML Method: createAvailableCoursesPanel ───────────────
+    public JPanel createAvailableCoursesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        String[] availCols = {"Code", "Name", "Credits", "Quota Left"};
+        DefaultTableModel availModel = new DefaultTableModel(availCols, 0);
+        for (Course c : dataStore.courses) {
+            int left = c.getQuota() - dataStore.countEnrollmentForCourse(c.getCourseCode());
+            availModel.addRow(new Object[]{c.getCourseCode(), c.getCourseName(), c.getCredit(), left});
         }
-        pressEnter();
-    }
+        JTable availTable = new JTable(availModel);
+        panel.add(new JScrollPane(availTable), BorderLayout.CENTER);
+        
+        JPanel enrollBtnPanel = new JPanel(new FlowLayout());
+        JButton btnEnroll = new JButton("Enroll Selected Course");
+        enrollBtnPanel.add(btnEnroll);
+        panel.add(enrollBtnPanel, BorderLayout.SOUTH);
 
-    private static void showCourseEnrollments() {
-        printHeader("COURSE ENROLLMENTS");
-        System.out.print("  Enter course code: ");
-        String code = sc.nextLine().trim();
-        List<Enrollment> list = store.getEnrollmentsByCourse(code);
-        if (list.isEmpty()) {
-            System.out.println("  No students enrolled in " + code + ".");
-        } else {
-            System.out.printf("  Students enrolled in %s:%n", code.toUpperCase());
-            for (Enrollment e : list) {
-                StudentProfile sp = store.findStudentProfileByUsername(e.getStudentUsername());
-                String name = (sp != null) ? sp.getFullName() : e.getStudentUsername();
-                System.out.println("    - " + name + " (" + e.getStudentUsername() + ")");
-            }
-        }
-        pressEnter();
-    }
-
-    private static void showGradeEntryPanel() {
-        printHeader("GRADE ENTRY");
-        System.out.print("  Student username : ");
-        String username = sc.nextLine().trim();
-        System.out.print("  Course code      : ");
-        String courseCode = sc.nextLine().trim();
-
-        if (!store.isStudentEnrolled(username, courseCode)) {
-            System.out.println("  [!] Student is not enrolled in " + courseCode + ".");
-            pressEnter();
-            return;
-        }
-
-        try {
-            System.out.print("  Midterm score (0-100): ");
-            double midterm = Double.parseDouble(sc.nextLine().trim());
-            System.out.print("  Final score   (0-100): ");
-            double finalEx = Double.parseDouble(sc.nextLine().trim());
-
-            if (midterm < 0 || midterm > 100 || finalEx < 0 || finalEx > 100) {
-                System.out.println("  [!] Scores must be between 0 and 100.");
-            } else {
-                store.upsertGrade(username, courseCode, midterm, finalEx);
-                GradeRecord g = store.findGrade(username, courseCode);
-                System.out.printf("%n  Saved — Average: %.1f  Grade: %s%n",
-                        g.calculateAverage(), g.getLetterGrade());
-            }
-        } catch (NumberFormatException ex) {
-            System.out.println("  [!] Invalid number entered.");
-        }
-        pressEnter();
-    }
-
-    // ─────────────────────────────────────────────────────────
-    //  ADMIN DASHBOARD (stub)
-    // ─────────────────────────────────────────────────────────
-    private static void showAdminDashboard() {
-        while (true) {
-            printHeader("ADMIN DASHBOARD  —  " + currentUser.getFullName());
-            System.out.println("  [1] List All Users");
-            System.out.println("  [2] List All Courses");
-            System.out.println("  [3] List All Students");
-            System.out.println("  [0] Logout");
-            System.out.print("\n  Choice: ");
-            String choice = sc.nextLine().trim();
-
-            switch (choice) {
-                case "1": listAllUsers();    break;
-                case "2": listAllCourses();  break;
-                case "3": listAllStudents(); break;
-                case "0":
-                    currentUser = null;
-                    showLoginPanel();
+        btnEnroll.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int row = availTable.getSelectedRow();
+                if (row == -1) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Select a course to enroll.");
                     return;
-                default:
-                    System.out.println("  [!] Invalid option.\n");
+                }
+                String courseCode = availModel.getValueAt(row, 0).toString();
+                String msg = dataStore.enrollStudent(currentUser.getUsername(), courseCode);
+                JOptionPane.showMessageDialog(UniversityAutomationApp.this, msg);
+                // In a full dynamic app, we'd trigger a refresh of My Courses here.
+                // For simplicity, they can just click the tab to see updates next time it is built.
+            }
+        });
+
+        return panel;
+    }
+
+    // ─────────────── UML Method: createMyCoursesPanel ───────────────
+    public JPanel createMyCoursesPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        String[] myCols = {"Code", "Name", "Credits"};
+        DefaultTableModel myModel = new DefaultTableModel(myCols, 0);
+        
+        List<Enrollment> myEnrolls = dataStore.getEnrollmentsByStudent(currentUser.getUsername());
+        for (Enrollment e : myEnrolls) {
+            Course c = dataStore.findCourse(e.getCourseCode());
+            if (c != null) {
+                myModel.addRow(new Object[]{c.getCourseCode(), c.getCourseName(), c.getCredit()});
             }
         }
+
+        JTable myTable = new JTable(myModel);
+        panel.add(new JScrollPane(myTable), BorderLayout.CENTER);
+        
+        JPanel dropBtnPanel = new JPanel(new FlowLayout());
+        JButton btnDrop = new JButton("Drop Selected Course");
+        dropBtnPanel.add(btnDrop);
+        panel.add(dropBtnPanel, BorderLayout.SOUTH);
+
+        btnDrop.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int row = myTable.getSelectedRow();
+                if (row == -1) {
+                    JOptionPane.showMessageDialog(UniversityAutomationApp.this, "Select a course to drop.");
+                    return;
+                }
+                String courseCode = myModel.getValueAt(row, 0).toString();
+                String msg = dataStore.removeEnrollment(currentUser.getUsername(), courseCode);
+                JOptionPane.showMessageDialog(UniversityAutomationApp.this, msg);
+                myModel.removeRow(row);
+            }
+        });
+
+        return panel;
     }
 
-    private static void listAllUsers() {
-        printHeader("ALL USERS");
-        for (User u : store.users)
-            System.out.printf("  %-15s | %-12s | %s%n",
-                    u.getUsername(), u.getRole(), u.getFullName());
-        pressEnter();
-    }
-
-    private static void listAllCourses() {
-        printHeader("ALL COURSES");
-        for (Course c : store.courses) {
-            int enrolled = store.countEnrollmentForCourse(c.getCourseCode());
-            System.out.printf("  %s | %-35s | Credits: %d | %d/%d enrolled%n",
-                    c.getCourseCode(), c.getCourseName(), c.getCredit(),
-                    enrolled, c.getQuota());
+    // ─────────────── UML Method: createTranscriptPanel ───────────────
+    public JPanel createTranscriptPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        
+        JPanel infoPanel = new JPanel(new GridLayout(2, 1));
+        StudentProfile profile = dataStore.findStudentProfileByUsername(currentUser.getUsername());
+        if (profile != null) {
+            infoPanel.add(new JLabel(" Student ID: " + profile.getStudentId() + " | Department: " + profile.getDepartment()));
+        } else {
+            infoPanel.add(new JLabel(" Profile not found."));
         }
-        pressEnter();
-    }
+        double gpa = dataStore.calculateGPA(currentUser.getUsername());
+        infoPanel.add(new JLabel(" Overall GPA: " + String.format("%.2f", gpa)));
+        panel.add(infoPanel, BorderLayout.NORTH);
 
-    private static void listAllStudents() {
-        printHeader("ALL STUDENTS");
-        for (StudentProfile sp : store.students)
-            System.out.println("  " + sp);
-        pressEnter();
-    }
+        String[] gradeCols = {"Course Code", "Midterm", "Final", "Average", "Letter Grade"};
+        DefaultTableModel gradeModel = new DefaultTableModel(gradeCols, 0);
+        List<GradeRecord> studentGrades = dataStore.getGradesByStudent(currentUser.getUsername());
+        for (GradeRecord g : studentGrades) {
+            gradeModel.addRow(new Object[]{g.getCourseCode(), g.getMidterm(), g.getFinalExam(), g.calculateAverage(), g.getLetterGrade()});
+        }
+        JTable gradeTable = new JTable(gradeModel);
+        panel.add(new JScrollPane(gradeTable), BorderLayout.CENTER);
 
-    // ─────────────────────────────────────────────────────────
-    //  Utility helpers
-    // ─────────────────────────────────────────────────────────
-    private static void printHeader(String title) {
-        System.out.println();
-        System.out.println("  ╔══════════════════════════════════════════════════════╗");
-        System.out.printf ("  ║  %-52s║%n", title);
-        System.out.println("  ╚══════════════════════════════════════════════════════╝");
-        System.out.println();
-    }
-
-    private static void printLine(int len) {
-        System.out.println("  " + "─".repeat(len));
-    }
-
-    private static void pressEnter() {
-        System.out.print("\n  Press ENTER to continue...");
-        sc.nextLine();
-        System.out.println();
+        return panel;
     }
 }

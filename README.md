@@ -1,16 +1,6 @@
 # 🎓 University Automation App
 
-A full-featured **Student Information System** built with Java (console) and a modern **Web UI**. Supports three roles — **Student**, **Instructor**, and **Admin** — with course management, enrollment, grade tracking, and GPA calculation.
-
----
-
-## 📸 Screenshots
-
-### Web Version — Login
-![Login](https://img.shields.io/badge/Dark_Theme-Modern_UI-6366f1?style=for-the-badge)
-
-### Web Version — Student Dashboard
-![Dashboard](https://img.shields.io/badge/Role--Based-Dashboards-22c55e?style=for-the-badge)
+A full-featured **Student Information System** built with Java Swing. Supports four roles — **Student**, **Instructor**, **Advisor**, and **Admin** — with course management, enrollment, grade tracking, and GPA calculation.
 
 ---
 
@@ -19,25 +9,31 @@ A full-featured **Student Information System** built with Java (console) and a m
 ### 👨‍🎓 Student
 | Feature | Description |
 |---------|-------------|
-| **My Profile** | View student ID, name, department, year, and GPA |
 | **Available Courses** | Browse all courses with quota info; enroll directly |
 | **My Courses** | View enrolled courses; drop a course |
-| **My Grades** | See midterm, final, weighted average, and letter grade |
-| **Transcript** | Full academic record with cumulative GPA (4.0 scale) |
+| **Transcript & Grades** | Full academic record with GPA (4.0 scale) |
 
 ### 👨‍🏫 Instructor
 | Feature | Description |
 |---------|-------------|
 | **My Courses** | View assigned courses with enrollment counts |
-| **Enrollments** | See which students are enrolled per course |
-| **Grade Entry** | Enter or update midterm and final scores |
+| **Enter Grades** | Select course, view enrolled students, enter/update midterm and final scores |
+
+### 🎓 Advisor (elevated access)
+| Feature | Description |
+|---------|-------------|
+| **My Courses** | View assigned courses with enrollment counts |
+| **Enter Grades** | Enter/update midterm and final scores |
+| **All Students** | Full student directory with GPA and academic standing; click any student to view grade details |
+| **System Reports** | View all users and all courses in the system |
 
 ### 🔑 Admin
 | Feature | Description |
 |---------|-------------|
-| **All Users** | View complete user directory with role badges |
-| **All Courses** | Browse every course with enrollment status |
-| **All Students** | Student directory with GPA overview |
+| **Add User** | Create new users with role assignment |
+| **Add Student Profile** | Create student academic profiles |
+| **Add Course** | Create courses and assign instructors |
+| **System Reports** | View all users and all courses |
 
 ---
 
@@ -47,34 +43,24 @@ A full-featured **Student Information System** built with Java (console) and a m
 |----------|----------|------|
 | `john_doe` | `pass123` | Student |
 | `jane_s` | `pass456` | Student |
+| `khaled_student` | `khaled123` | Student |
+| `khaled_admin` | `khaled456` | Admin |
 | `prof_ali` | `teach789` | Instructor |
 | `prof_cem` | `teach000` | Instructor |
+| `prof_nazife` | `nazife789` | Advisor |
 | `admin` | `admin123` | Admin |
 
 ---
 
 ## 🚀 How to Run
 
-### Option 1: Web Version (Recommended)
-
-Simply open in any browser — **no server required**:
-
-```
-UniversityAutomationApp/web/index.html
-```
-
-> Data is stored in your browser's `localStorage` and persists across sessions.
-
-### Option 2: Java Console Version
-
-**Compile:**
+### Compile
 ```bash
 cd UniversityAutomationApp
-mkdir -p out
-javac -d out src/*.java
+javac --release 21 -d out src\UniversityAutomationApp.java src\DataStore.java src\User.java src\StudentProfile.java src\Course.java src\Enrollment.java src\GradeRecord.java
 ```
 
-**Run:**
+### Run
 ```bash
 java -cp out UniversityAutomationApp
 ```
@@ -121,24 +107,19 @@ UniversityAutomationApp/
 ├── .gitignore
 └── UniversityAutomationApp/
     ├── src/                        # Java source code
-    │   ├── UniversityAutomationApp.java   # Entry point & console UI
+    │   ├── UniversityAutomationApp.java   # Entry point & Swing UI
     │   ├── DataStore.java                 # Data management (load/save/query)
     │   ├── User.java                      # User credentials and role
     │   ├── StudentProfile.java            # Student academic info
     │   ├── Course.java                    # Course details and quota
     │   ├── Enrollment.java                # Student ↔ Course link
     │   └── GradeRecord.java               # Midterm, final, average, letter grade
-    ├── data/                       # Persistent data (text files)
-    │   ├── users.txt
-    │   ├── students.txt
-    │   ├── courses.txt
-    │   ├── enrollments.txt
-    │   └── grades.txt
-    └── web/                        # Web UI (standalone)
-        ├── index.html
-        ├── style.css
-        ├── data.js                        # Data layer (mirrors Java DataStore)
-        └── app.js                         # UI controller
+    └── data/                       # Persistent data (text files)
+        ├── users.txt
+        ├── students.txt
+        ├── courses.txt
+        ├── enrollments.txt
+        └── grades.txt
 ```
 
 ---
@@ -147,10 +128,9 @@ UniversityAutomationApp/
 
 | Component | Technology |
 |-----------|-----------|
-| **Console App** | Java (JDK 11+) |
-| **Web Frontend** | HTML5, CSS3, Vanilla JavaScript |
-| **Data Storage** | Text files (Java) / localStorage (Web) |
-| **Design** | Dark theme, Inter font, responsive layout |
+| **Application** | Java Swing (JDK 21+) |
+| **Data Storage** | Text files with CSV format |
+| **Architecture** | MVC-inspired (DataStore + UI panels) |
 
 ---
 
