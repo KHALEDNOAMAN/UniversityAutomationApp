@@ -1,25 +1,25 @@
-# 🎓 University Automation App
+#  University Automation App
 
 A full-featured **Student Information System** built with Java Swing. Supports four roles — **Student**, **Instructor**, **Advisor**, and **Admin** — with course management, enrollment, grade tracking, and GPA calculation.
 
 ---
 
-## ✨ Features
+##  Features
 
-### 👨‍🎓 Student
+###  Student
 | Feature | Description |
 |---------|-------------|
 | **Available Courses** | Browse all courses with quota info; enroll directly |
 | **My Courses** | View enrolled courses; drop a course |
 | **Transcript & Grades** | Full academic record with GPA (4.0 scale) |
 
-### 👨‍🏫 Instructor
+###  Instructor
 | Feature | Description |
 |---------|-------------|
 | **My Courses** | View assigned courses with enrollment counts |
 | **Enter Grades** | Select course, view enrolled students, enter/update midterm and final scores |
 
-### 🎓 Advisor (elevated access)
+###  Advisor (elevated access)
 | Feature | Description |
 |---------|-------------|
 | **My Courses** | View assigned courses with enrollment counts |
@@ -27,7 +27,7 @@ A full-featured **Student Information System** built with Java Swing. Supports f
 | **All Students** | Full student directory with GPA and academic standing; click any student to view grade details |
 | **System Reports** | View all users and all courses in the system |
 
-### 🔑 Admin
+###  Admin
 | Feature | Description |
 |---------|-------------|
 | **Add User** | Create new users with role assignment |
@@ -37,7 +37,7 @@ A full-featured **Student Information System** built with Java Swing. Supports f
 
 ---
 
-## 🔑 Demo Accounts
+##  Demo Accounts
 
 | Username | Password | Role |
 |----------|----------|------|
@@ -52,7 +52,7 @@ A full-featured **Student Information System** built with Java Swing. Supports f
 
 ---
 
-## 🚀 How to Run
+##  How to Run
 
 ### Compile
 ```bash
@@ -69,7 +69,7 @@ java -cp out UniversityAutomationApp
 
 ---
 
-## 📊 Grading System
+##  Grading System
 
 ### Grade Weights
 - **Midterm**: 40%
@@ -99,7 +99,7 @@ java -cp out UniversityAutomationApp
 
 ---
 
-## 🏗️ Project Structure
+##  Project Structure
 
 ```
 UniversityAutomationApp/
@@ -124,7 +124,7 @@ UniversityAutomationApp/
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
@@ -134,7 +134,7 @@ UniversityAutomationApp/
 
 ---
 
-## 📄 License
+##  License
 
 This project is for educational purposes.
 
