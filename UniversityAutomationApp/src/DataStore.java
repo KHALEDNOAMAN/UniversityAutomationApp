@@ -41,10 +41,10 @@ public class DataStore {
         users.add(new User("khaled_admin",   "khaled456",  "admin",      "Khaled Noaman",      "A002"));
         users.add(new User("prof_nazife",    "nazife789",  "advisor",    "Prof. Nazife Cevik",  "I003"));
 
-        // Student profiles (studentId, fullName, department, year, credit, username)
-        students.add(new StudentProfile("S001", "John Doe",      "Computer Science",      2, 45, "john_doe"));
-        students.add(new StudentProfile("S002", "Jane Smith",    "Mathematics",           3, 72, "jane_s"));
-        students.add(new StudentProfile("S003", "Khaled Noaman", "Computer Engineering",  3, 80, "khaled_student"));
+        // Student profiles
+        students.add(new StudentProfile("S001", "John Doe",      "Computer Science",      2, "john_doe"));
+        students.add(new StudentProfile("S002", "Jane Smith",    "Mathematics",           3, "jane_s"));
+        students.add(new StudentProfile("S003", "Khaled Noaman", "Computer Engineering",  3, "khaled_student"));
 
         // Courses
         courses.add(new Course("CS101",   "Introduction to Programming",   3, 30, "prof_ali"));
@@ -269,13 +269,8 @@ public class DataStore {
     public void loadStudents() {
         students.clear();
         for (String line : readLines(STUDENTS_FILE)) {
-            String[] p = line.split(",", 6);
-            if (p.length == 6)
-                // format: studentId, fullName, department, year, credit, username
-                students.add(new StudentProfile(p[0], p[1], p[2],
-                        Integer.parseInt(p[3]), Integer.parseInt(p[4]), p[5]));
-            else if (p.length == 5)
-                // backward compatibility: no credit field
+            String[] p = line.split(",", 5);
+            if (p.length == 5)
                 students.add(new StudentProfile(p[0], p[1], p[2],
                         Integer.parseInt(p[3]), p[4]));
         }
